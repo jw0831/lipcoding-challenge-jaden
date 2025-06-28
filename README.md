@@ -11,7 +11,21 @@ A full-stack web application for matching mentors and mentees, built with Flask 
 - **OpenAPI Compliance**: 100% API specification adherence
 - **TDD Implementation**: Comprehensive test-driven development
 
-## � Quick Start
+## 🚀 Quick Start
+
+### ⚡ 자동 실행 스크립트 (권장)
+```bash
+# 전체 애플리케이션 실행 (백엔드 + 프론트엔드)
+./start-app.sh
+
+# 개별 실행 (완전 설정)
+./start-backend.sh    # 백엔드 (가상환경 생성, 패키지 설치 포함)
+./start-frontend.sh   # 프론트엔드 (npm install 포함)
+
+# 빠른 실행 (이미 설정된 경우)
+./run-backend.sh      # 백엔드만 빠르게 시작
+./run-frontend.sh     # 프론트엔드만 빠르게 시작
+```
 
 ### Prerequisites
 - Python 3.9+
@@ -42,9 +56,10 @@ Frontend will run on http://localhost:3000
 
 ## 📋 API Documentation
 
-- **Swagger UI**: http://localhost:8080/swagger-ui
-- **OpenAPI Spec**: http://localhost:8080/openapi.yaml
-- **Root Endpoint**: http://localhost:8080/ (redirects to Swagger)
+- **🔗 Swagger UI**: http://localhost:8080/swagger-ui (인터랙티브 API 테스트)
+- **📄 OpenAPI YAML**: http://localhost:8080/openapi.yaml (YAML 형식 스펙)  
+- **📄 OpenAPI JSON**: http://localhost:8080/openapi.json (JSON 형식 스펙)
+- **🏠 Root Endpoint**: http://localhost:8080/ (자동으로 Swagger UI로 리다이렉트)
 
 ## 🧪 Testing
 
