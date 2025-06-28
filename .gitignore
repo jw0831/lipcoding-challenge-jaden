@@ -14,11 +14,15 @@ ENV/
 env.bak/
 venv.bak/
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
+# Database files (excluding SQLite for local development)
+# *.db
+# *.sqlite
+# *.sqlite3
+
+# Instance folder (but allow database files)
 instance/
+!instance/*.db
+!instance/*.sqlite*
 
 # IDE
 .vscode/settings.json
@@ -63,3 +67,18 @@ dist/
 # Frontend build
 frontend/build/
 frontend/dist/
+
+# Screenshots and demo videos
+docs/screenshots/
+*.mov
+*.mp4
+*.avi
+*.mkv
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Large demo files
+*.zip
+*.tar.gz
