@@ -24,17 +24,29 @@ function MentorList() {
   const fetchMentors = async () => {
     try {
       setLoading(true);
+      setError('');
       const params = new URLSearchParams();
       if (filters.skill) params.append('skill', filters.skill);
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
+      console.log('Fetching mentors with params:', params.toString());
       const response = await axios.get(`/api/mentors?${params}`);
+      console.log('Mentors response:', response.data);
       setMentors(response.data);
-      setError('');
     } catch (err) {
-      setError('Failed to fetch mentors');
       console.error('Error fetching mentors:', err);
+      if (err.response) {
+        console.error('Response data:', err.response.data);
+        console.error('Response status:', err.response.status);
+        setError(`Failed to fetch mentors: ${err.response.data.error || err.response.data.msg || 'Unknown error'}`);
+      } else if (err.request) {
+        console.error('Request error:', err.request);
+        setError('Failed to fetch mentors: Network error');
+      } else {
+        console.error('Error message:', err.message);
+        setError(`Failed to fetch mentors: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -135,14 +147,14 @@ function MentorList() {
           {mentors.map((mentor) => (
             <div key={mentor.id} className="mentor-card">
               <img
-                src={mentor.imageUrl}
-                alt={mentor.name}
+                src={mentor.profile.imageUrl}
+                alt={mentor.profile.name}
                 className="profile-image"
               />
-              <h3>{mentor.name}</h3>
-              <p>{mentor.bio || 'No bio available'}</p>
+              <h3>{mentor.profile.name}</h3>
+              <p>{mentor.profile.bio || 'No bio available'}</p>
               <div className="skills">
-                {mentor.skills.map((skill, index) => (
+                {mentor.profile.skills.map((skill, index) => (
                   <span key={index} className="skill-tag">{skill}</span>
                 ))}
               </div>
@@ -163,7 +175,7 @@ function MentorList() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3 className="modal-title">Send Request to {selectedMentor.name}</h3>
+              <h3 className="modal-title">Send Request to {selectedMentor.profile.name}</h3>
               <button
                 className="close-btn"
                 onClick={() => setSelectedMentor(null)}
