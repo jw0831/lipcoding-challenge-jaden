@@ -763,6 +763,39 @@ components:
           type: string
           example: "Detailed error information"
 
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - role
+        - name
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        role:
+          type: string
+          enum: [mentor, mentee]
+          example: "mentor"
+        name:
+          type: string
+          example: "김멘토"
+        bio:
+          type: string
+          example: "전체적인 기술 멘토링을 제공합니다"
+        imageUrl:
+          type: string
+          example: "/api/images/mentor/1"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T00:00:00Z"
+
 tags:
   - name: Authentication
     description: User authentication endpoints
