@@ -15,8 +15,16 @@ function Requests() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/requests');
-      setRequests(response.data);
+      
+      // Fetch both incoming and outgoing requests based on user role
+      const incomingResponse = await axios.get('/api/match-requests/incoming');
+      const outgoingResponse = await axios.get('/api/match-requests/outgoing');
+      
+      // Combine and mark the requests
+      const incomingRequests = incomingResponse.data.map(req => ({ ...req, type: 'incoming' }));
+      const outgoingRequests = outgoingResponse.data.map(req => ({ ...req, type: 'outgoing' }));
+      
+      setRequests([...incomingRequests, ...outgoingRequests]);
       setError('');
     } catch (err) {
       setError('Failed to fetch requests');
@@ -28,7 +36,11 @@ function Requests() {
 
   const updateRequestStatus = async (requestId, status) => {
     try {
-      await axios.put(`/api/requests/${requestId}`, { status });
+      if (status === 'accepted') {
+        await axios.put(`/api/match-requests/${requestId}/accept`);
+      } else if (status === 'rejected') {
+        await axios.put(`/api/match-requests/${requestId}/reject`);
+      }
       fetchRequests(); // Refresh the list
       alert(`Request ${status} successfully!`);
     } catch (err) {
@@ -42,7 +54,7 @@ function Requests() {
     }
 
     try {
-      await axios.delete(`/api/requests/${requestId}`);
+      await axios.delete(`/api/match-requests/${requestId}`);
       fetchRequests(); // Refresh the list
       alert('Request deleted successfully!');
     } catch (err) {

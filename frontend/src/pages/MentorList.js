@@ -50,7 +50,7 @@ function MentorList() {
   const sendRequest = async (mentorId) => {
     try {
       setSubmitting(true);
-      await axios.post('/api/requests', {
+      await axios.post('/api/match-requests', {
         mentorId: mentorId,
         message: requestMessage
       });

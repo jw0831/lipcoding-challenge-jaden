@@ -88,7 +88,7 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (profileData) => {
     try {
-      await axios.put('/api/me', profileData);
+      await axios.put('/api/profile', profileData);
       await fetchUser(); // Refresh user data
       return { success: true };
     } catch (error) {
