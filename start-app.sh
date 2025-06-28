@@ -23,15 +23,15 @@ if ! command -v osascript &> /dev/null && ! command -v gnome-terminal &> /dev/nu
 fi
 
 # 스크립트 실행 권한 부여
-chmod +x start-backend.sh
-chmod +x start-frontend.sh
+chmod +x backend/start-backend.sh
+chmod +x frontend/start-frontend.sh
 
 echo "1️⃣  백엔드 서버를 시작합니다..."
 
 # macOS의 경우
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # 백엔드를 새 터미널 탭에서 실행
-    osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && ./start-backend.sh\""
+    osascript -e "tell application \"Terminal\" to do script \"cd $(pwd)/backend && ./start-backend.sh\""
     
     # 프론트엔드 시작 전 잠시 대기
     echo "⏳ 백엔드 서버 시작을 기다리는 중 (5초)..."
@@ -39,12 +39,12 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     
     echo "2️⃣  프론트엔드 서버를 시작합니다..."
     # 프론트엔드를 새 터미널 탭에서 실행
-    osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && ./start-frontend.sh\""
+    osascript -e "tell application \"Terminal\" to do script \"cd $(pwd)/frontend && ./start-frontend.sh\""
     
 # Linux의 경우
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # 백엔드를 새 터미널에서 실행
-    gnome-terminal -- bash -c "cd $(pwd) && ./start-backend.sh; exec bash"
+    gnome-terminal -- bash -c "cd $(pwd)/backend && ./start-backend.sh; exec bash"
     
     # 프론트엔드 시작 전 잠시 대기
     echo "⏳ 백엔드 서버 시작을 기다리는 중 (5초)..."
@@ -52,7 +52,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     
     echo "2️⃣  프론트엔드 서버를 시작합니다..."
     # 프론트엔드를 새 터미널에서 실행
-    gnome-terminal -- bash -c "cd $(pwd) && ./start-frontend.sh; exec bash"
+    gnome-terminal -- bash -c "cd $(pwd)/frontend && ./start-frontend.sh; exec bash"
 fi
 
 echo ""

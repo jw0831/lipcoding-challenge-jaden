@@ -6,9 +6,10 @@
 echo "⚛️  Mentor-Mentee Frontend 서버 시작"
 echo "=================================="
 
-# 프론트엔드 디렉토리로 이동
-cd frontend 2>/dev/null || {
-    echo "❌ frontend 폴더를 찾을 수 없습니다."
+# 현재 디렉토리에서 실행 (이미 frontend 폴더 안에 있음)
+SCRIPT_DIR="$(dirname "$0")"
+cd "$SCRIPT_DIR" || {
+    echo "❌ 스크립트 디렉토리를 찾을 수 없습니다."
     echo "   현재 위치: $(pwd)"
     exit 1
 }

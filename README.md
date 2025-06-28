@@ -19,12 +19,12 @@ A full-stack web application for matching mentors and mentees, built with Flask 
 ./start-app.sh
 
 # 개별 실행 (완전 설정)
-./start-backend.sh    # 백엔드 (가상환경 생성, 패키지 설치 포함)
+cd backend && ./start-backend.sh    # 백엔드 (가상환경 생성, 패키지 설치 포함)
 ./start-frontend.sh   # 프론트엔드 (npm install 포함)
 
 # 빠른 실행 (이미 설정된 경우)
-./run-backend.sh      # 백엔드만 빠르게 시작
-./run-frontend.sh     # 프론트엔드만 빠르게 시작
+cd backend && ./run-backend.sh      # 백엔드만 빠르게 시작
+cd frontend && ./run-frontend.sh    # 프론트엔드만 빠르게 시작
 ```
 
 ### Prerequisites

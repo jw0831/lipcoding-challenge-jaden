@@ -8,9 +8,10 @@ echo "포트: http://localhost:8080"
 echo "API 문서: http://localhost:8080/swagger-ui"
 echo ""
 
-# 백엔드 디렉토리로 이동
-cd "$(dirname "$0")/backend" || {
-    echo "❌ backend 디렉토리를 찾을 수 없습니다."
+# 백엔드 디렉토리에서 실행 (이미 backend 폴더 안에 있음)
+SCRIPT_DIR="$(dirname "$0")"
+cd "$SCRIPT_DIR" || {
+    echo "❌ 스크립트 디렉토리를 찾을 수 없습니다."
     exit 1
 }
 
