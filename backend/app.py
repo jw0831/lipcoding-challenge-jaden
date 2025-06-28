@@ -16,6 +16,7 @@ import uuid
 from PIL import Image
 import io
 import base64
+import yaml
 from email_validator import validate_email, EmailNotValidError
 
 app = Flask(__name__)
@@ -30,7 +31,7 @@ app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1MB max file size
 # Initialize extensions
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
+CORS(app, origins=["http://localhost:3000", "http://localhost:3001"], supports_credentials=True)
 
 # Create upload directory
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -119,14 +120,14 @@ def create_jwt_token(user):
     """Create JWT token with all required claims"""
     additional_claims = {
         "iss": "mentor-mentee-app",  # Issuer
-        "sub": str(user.id),         # Subject (user ID)
-        "aud": "mentor-mentee-users", # Audience
-        "jti": str(uuid.uuid4()),    # JWT ID
-        "name": user.name or "",     # User name
-        "email": user.email,         # User email
-        "role": user.role,           # User role
-        "nbf": datetime.utcnow(),    # Not before
-        "iat": datetime.utcnow(),    # Issued at
+        "sub": str(user.id),  # Subject (user ID)
+        "aud": "mentor-mentee-users",  # Audience
+        "jti": str(uuid.uuid4()),  # JWT ID
+        "name": user.name or "",  # User name
+        "email": user.email,  # User email
+        "role": user.role,  # User role
+        "nbf": datetime.utcnow(),  # Not before
+        "iat": datetime.utcnow(),  # Issued at
     }
     return create_access_token(identity=user.id, additional_claims=additional_claims)
 
@@ -168,72 +169,58 @@ def swagger_ui():
 
 @app.route("/openapi.json")
 def openapi_spec():
-    """Serve OpenAPI specification"""
-    spec = {
-        "openapi": "3.0.0",
-        "info": {
-            "title": "Mentor-Mentee Matching API",
-            "version": "1.0.0",
-            "description": "API for mentor-mentee matching application",
-        },
-        "servers": [
-            {"url": "http://localhost:8080", "description": "Development server"}
-        ],
-        "paths": {
-            "/api/signup": {
-                "post": {
-                    "summary": "User registration",
-                    "requestBody": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "email": {"type": "string"},
-                                        "password": {"type": "string"},
-                                        "name": {"type": "string"},
-                                        "role": {
-                                            "type": "string",
-                                            "enum": ["mentor", "mentee"],
-                                        },
-                                    },
-                                }
-                            }
-                        }
-                    },
-                    "responses": {
-                        "201": {"description": "User created successfully"},
-                        "400": {"description": "Bad request"},
-                        "500": {"description": "Internal server error"},
-                    },
-                }
+    """Serve OpenAPI specification from YAML file"""
+    try:
+        # Load the OpenAPI YAML file from the project root
+        yaml_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'openapi.yaml')
+        
+        if os.path.exists(yaml_path):
+            with open(yaml_path, 'r', encoding='utf-8') as file:
+                spec = yaml.safe_load(file)
+            return jsonify(spec)
+        else:
+            # Fallback to basic spec if YAML file doesn't exist
+            return jsonify({
+                "openapi": "3.0.1",
+                "info": {
+                    "title": "Mentor-Mentee Matching API",
+                    "version": "1.0.0",
+                    "description": "API for mentor-mentee matching application",
+                },
+                "servers": [
+                    {"url": "http://localhost:8080/api", "description": "Development server"}
+                ],
+                "paths": {}
+            })
+    except Exception as e:
+        # Return basic spec if there's an error loading the YAML
+        return jsonify({
+            "openapi": "3.0.1",
+            "info": {
+                "title": "Mentor-Mentee Matching API",
+                "version": "1.0.0",
+                "description": "API for mentor-mentee matching application",
             },
-            "/api/login": {
-                "post": {
-                    "summary": "User login",
-                    "requestBody": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "email": {"type": "string"},
-                                        "password": {"type": "string"},
-                                    },
-                                }
-                            }
-                        }
-                    },
-                    "responses": {
-                        "200": {"description": "Login successful"},
-                        "401": {"description": "Unauthorized"},
-                        "500": {"description": "Internal server error"},
-                    },
-                }
-            },
-        },
-    }
-    return jsonify(spec)
+            "servers": [
+                {"url": "http://localhost:8080/api", "description": "Development server"}
+            ],
+            "paths": {}
+        })
+
+
+@app.route("/openapi.yaml")
+def openapi_yaml():
+    """Serve raw OpenAPI YAML specification"""
+    try:
+        # Load the OpenAPI YAML file from the project root
+        yaml_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'openapi.yaml')
+        
+        if os.path.exists(yaml_path):
+            return send_file(yaml_path, mimetype='application/x-yaml')
+        else:
+            return "OpenAPI YAML file not found", 404
+    except Exception:
+        return "Error serving OpenAPI YAML file", 500
 
 
 # Authentication routes
@@ -311,7 +298,7 @@ def get_me():
     try:
         user_id = get_jwt_identity()
         print(f"GET /api/me - User ID from token: {user_id}")
-        
+
         user = User.query.get(user_id)
         print(f"User found: {user.email if user else 'None'}")
 
@@ -480,7 +467,7 @@ def get_mentors():
                     "bio": mentor.bio,
                     "imageUrl": f"/api/images/mentor/{mentor.id}",
                     "skills": skills,
-                }
+                },
             }
             mentor_list.append(mentor_data)
 
@@ -723,9 +710,7 @@ def create_match_request():
 
         # Create new request
         new_request = MatchingRequest(
-            mentor_id=mentor_id, 
-            mentee_id=user_id, 
-            message=data.get("message", "")
+            mentor_id=mentor_id, mentee_id=user_id, message=data.get("message", "")
         )
 
         db.session.add(new_request)
@@ -737,7 +722,7 @@ def create_match_request():
             "mentorId": new_request.mentor_id,
             "menteeId": new_request.mentee_id,
             "message": new_request.message,
-            "status": new_request.status
+            "status": new_request.status,
         }
 
         return jsonify(response_data), 200
@@ -754,25 +739,25 @@ def get_incoming_requests():
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
-        
+
         if user.role != "mentor":
             return jsonify({"error": "Only mentors can view incoming requests"}), 403
-        
+
         requests = MatchingRequest.query.filter_by(mentor_id=user_id).all()
         request_list = []
-        
+
         for req in requests:
             request_data = {
                 "id": req.id,
                 "mentorId": req.mentor_id,
                 "menteeId": req.mentee_id,
                 "message": req.message,
-                "status": req.status
+                "status": req.status,
             }
             request_list.append(request_data)
-        
+
         return jsonify(request_list), 200
-        
+
     except Exception as e:
         return jsonify({"error": "Internal server error"}), 500
 
@@ -784,24 +769,24 @@ def get_outgoing_requests():
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
-        
+
         if user.role != "mentee":
             return jsonify({"error": "Only mentees can view outgoing requests"}), 403
-        
+
         requests = MatchingRequest.query.filter_by(mentee_id=user_id).all()
         request_list = []
-        
+
         for req in requests:
             request_data = {
                 "id": req.id,
                 "mentorId": req.mentor_id,
                 "menteeId": req.mentee_id,
-                "status": req.status
+                "status": req.status,
             }
             request_list.append(request_data)
-        
+
         return jsonify(request_list), 200
-        
+
     except Exception as e:
         return jsonify({"error": "Internal server error"}), 500
 
@@ -813,39 +798,44 @@ def accept_request(request_id):
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
-        
+
         if user.role != "mentor":
             return jsonify({"error": "Only mentors can accept requests"}), 403
-        
+
         matching_request = MatchingRequest.query.get(request_id)
         if not matching_request:
             return jsonify({"error": "Request not found"}), 404
-        
+
         if matching_request.mentor_id != int(user_id):  # Convert user_id to int
             return jsonify({"error": "Unauthorized"}), 403
-        
+
         # Check if mentor already has an accepted request
         existing_accepted = MatchingRequest.query.filter_by(
             mentor_id=user_id, status="accepted"
         ).first()
-        
+
         if existing_accepted:
-            return jsonify({"error": "You already have an accepted mentoring relationship"}), 400
-        
+            return (
+                jsonify(
+                    {"error": "You already have an accepted mentoring relationship"}
+                ),
+                400,
+            )
+
         matching_request.status = "accepted"
         matching_request.updated_at = datetime.utcnow()
         db.session.commit()
-        
+
         response_data = {
             "id": matching_request.id,
             "mentorId": matching_request.mentor_id,
             "menteeId": matching_request.mentee_id,
             "message": matching_request.message,
-            "status": matching_request.status
+            "status": matching_request.status,
         }
-        
+
         return jsonify(response_data), 200
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Internal server error"}), 500
@@ -858,31 +848,31 @@ def reject_request(request_id):
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
-        
+
         if user.role != "mentor":
             return jsonify({"error": "Only mentors can reject requests"}), 403
-        
+
         matching_request = MatchingRequest.query.get(request_id)
         if not matching_request:
             return jsonify({"error": "Request not found"}), 404
-        
+
         if matching_request.mentor_id != user_id:
             return jsonify({"error": "Unauthorized"}), 403
-        
+
         matching_request.status = "rejected"
         matching_request.updated_at = datetime.utcnow()
         db.session.commit()
-        
+
         response_data = {
             "id": matching_request.id,
             "mentorId": matching_request.mentor_id,
             "menteeId": matching_request.mentee_id,
             "message": matching_request.message,
-            "status": matching_request.status
+            "status": matching_request.status,
         }
-        
+
         return jsonify(response_data), 200
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Internal server error"}), 500
@@ -895,32 +885,32 @@ def cancel_request(request_id):
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
-        
+
         if user.role != "mentee":
             return jsonify({"error": "Only mentees can cancel requests"}), 403
-        
+
         matching_request = MatchingRequest.query.get(request_id)
         if not matching_request:
             return jsonify({"error": "Request not found"}), 404
-        
+
         if matching_request.mentee_id != user_id:
             return jsonify({"error": "Unauthorized"}), 403
-        
+
         # According to API spec, mark as cancelled instead of deleting
         matching_request.status = "cancelled"
         matching_request.updated_at = datetime.utcnow()
         db.session.commit()
-        
+
         response_data = {
             "id": matching_request.id,
             "mentorId": matching_request.mentor_id,
             "menteeId": matching_request.mentee_id,
             "message": matching_request.message,
-            "status": matching_request.status
+            "status": matching_request.status,
         }
-        
+
         return jsonify(response_data), 200
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Internal server error"}), 500
@@ -956,19 +946,19 @@ def profile_spec():
                 "email": user.email,
                 "name": user.name,
                 "role": user.role,
-                "bio": user.bio
+                "bio": user.bio,
             }
-            
+
             if user.role == "mentor":
                 # Get skills from relationship
                 skills = [skill.skill for skill in user.mentor_skills]
                 profile_data["skills"] = skills
                 # Note: availability is not in the current model
             # Note: interests is not in the current model for mentees
-            
+
             if user.profile_image:
                 profile_data["imageUrl"] = f"/api/profile/image/{user.id}"
-                
+
             return jsonify(profile_data), 200
 
         # Handle PUT request
@@ -979,29 +969,37 @@ def profile_spec():
             user.name = data["name"]
         if "bio" in data:
             user.bio = data["bio"]
-        
+
         # Handle base64 image upload
         if "image" in data and data["image"]:
             try:
                 # Decode base64 image
                 import base64
+
                 image_data = base64.b64decode(data["image"])
-                
+
                 # Validate image
                 image = Image.open(io.BytesIO(image_data))
                 width, height = image.size
-                
+
                 if width < 500 or height < 500 or width > 1000 or height > 1000:
-                    return jsonify({"error": "Image must be between 500x500 and 1000x1000 pixels"}), 400
-                
+                    return (
+                        jsonify(
+                            {
+                                "error": "Image must be between 500x500 and 1000x1000 pixels"
+                            }
+                        ),
+                        400,
+                    )
+
                 if width != height:
                     return jsonify({"error": "Image must be square"}), 400
-                
+
                 if len(image_data) > 1024 * 1024:  # 1MB
                     return jsonify({"error": "Image size must be less than 1MB"}), 400
-                
+
                 user.profile_image = image_data
-                
+
             except Exception as img_error:
                 return jsonify({"error": f"Invalid image data: {str(img_error)}"}), 400
 
@@ -1009,7 +1007,7 @@ def profile_spec():
         if user.role == "mentor" and "skills" in data:
             # Remove existing skills
             MentorSkill.query.filter_by(user_id=user.id).delete()
-            
+
             # Add new skills
             if data["skills"]:
                 for skill in data["skills"]:
@@ -1017,7 +1015,7 @@ def profile_spec():
                     db.session.add(new_skill)
 
         db.session.commit()
-        
+
         # Return updated profile data according to spec
         profile_data = {
             "id": user.id,
@@ -1029,17 +1027,23 @@ def profile_spec():
                 "imageUrl": f"/api/images/{user.role}/{user.id}",
             },
         }
-        
+
         if user.role == "mentor":
             skills = [skill.skill for skill in user.mentor_skills]
             profile_data["profile"]["skills"] = skills
-        
+
         return jsonify(profile_data), 200
 
     except Exception as e:
         db.session.rollback()
         print(f"Error in update_profile_spec: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api-docs")
+def api_docs():
+    """Redirect to Swagger UI"""
+    return redirect("/swagger-ui")
 
 
 if __name__ == "__main__":
