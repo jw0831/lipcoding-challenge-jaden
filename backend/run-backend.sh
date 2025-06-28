@@ -14,10 +14,12 @@ cd "$SCRIPT_DIR" || {
     exit 1
 }
 
-# 가상환경 활성화
+# 가상환경 활성화 (선택적)
 if [ -d "venv" ]; then
     echo "🔧 가상환경 활성화..."
     source venv/bin/activate
+elif [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ]; then
+    echo "🤖 CI 환경에서 실행 중 (가상환경 생략)"
 else
     echo "⚠️  가상환경이 없습니다. 전체 설정 스크립트를 사용하세요: ./start-backend.sh"
     exit 1
