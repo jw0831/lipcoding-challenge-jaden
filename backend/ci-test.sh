@@ -7,9 +7,8 @@ echo "🤖 CI 환경에서 백엔드 테스트 실행"
 echo "================================"
 
 # Python 패키지 설치 확인
-echo "🔍 의존성 확인 중..."
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+echo "🔍 설치된 패키지 확인 중..."
+python -c "import flask; print(f'Flask 버전: {flask.__version__}')"
 
 # 기본 임포트 테스트
 echo "📦 모듈 임포트 테스트..."
